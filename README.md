@@ -13,6 +13,7 @@ git clone https://github.com/saothienhat/SpringCloudDemo.git
 	-- configuration : folder contains configuration properties files
 	-- apigateway: API Gateway (Port: 8080)
 	-- eurekaserver: Eureka Server (Port: 8010)
+	-- user-service
 
 ```
 
@@ -70,3 +71,9 @@ Run by Eclipse: Run As => Spring Boot App
 Check on Brower / Postman [GET] : localhost:8010
 
 ```
+
+## User Service
+-	Refer:
+	+	http://appsdeveloperblog.com/register-web-service-with-eureka-server/
+	
+-	How to run ?

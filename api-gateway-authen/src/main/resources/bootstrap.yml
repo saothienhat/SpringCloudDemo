@@ -1,0 +1,48 @@
+server:
+  port: 8080
+  error:    whitelabel:      enabled: false
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8010/eureka
+spring:
+  application:
+    name: apigateway-auth
+#  mvc:
+#    throw-exception-if-no-handler-found: true
+#  resources:
+#    add-mappings: false
+  cloud.gateway:  
+    discovery:
+      locator:
+        enabled: true
+        lowerCaseServiceId: true
+    routes:
+    - id: users
+      uri: lb://user-service ## mapping with spring.application.name in User Service configuration
+      predicates:
+        - Path=/users/**
+    - id: bank
+      uri: lb://bank-service
+      predicates:        - Path=/bank/**
+    - id: cart
+      uri: lb://cart-service
+      predicates:
+        - Path=/cart/**
+
+## http://localhost:8080/api/ -> help to reach the gateway.
+## http://localhost:8080/api/cart/ -> This helps ZUUL proxy to redirect the request to cart service by appending the remaining part. ie finally it will be converted to http://localhost:8081/v1/cart/123
+
+## All url come with prefix/api will interpret
+## It means whichever URL coming with /cart/** redirect it to http://localhost:8081/ (port of Cart Service)
+##  zuul.routes.middleware.path=/cart/**
+##  zuul.routes.middleware.url=http://localhost:8081/
+## ==> API call to API Gateway should be: http://localhost:8080/api/<api-detail> such as: http://localhost:8080/api/cart/cart/products
+zuul:
+  prefix: /api
+  routes:
+    middleware:
+      path: /cart/**
+      url: http://localhost:8081/
+
+

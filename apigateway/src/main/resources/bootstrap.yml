@@ -1,0 +1,26 @@
+server:
+  port: 8080
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8010/eureka
+spring:
+  application:
+    name: apigateway
+  cloud.gateway:
+    discovery:
+      locator:
+        enabled: true
+        lowerCaseServiceId: true
+    routes:
+    - id: users
+      uri: lb://user-service ## mapping with spring.application.name in User Service configuration
+      predicates:
+        - Path=/users/**
+    - id: bank
+      uri: lb://bank-service
+      predicates:        - Path=/bank/**
+    - id: cart
+      uri: lb://cart-service
+      predicates:
+        - Path=/cart/**

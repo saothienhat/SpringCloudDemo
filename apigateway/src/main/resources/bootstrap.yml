@@ -24,3 +24,7 @@ spring:
       uri: lb://cart-service
       predicates:
         - Path=/cart/**
+    - id: export
+      uri: lb://export-data-service
+      predicates:
+        - Path=/export/**

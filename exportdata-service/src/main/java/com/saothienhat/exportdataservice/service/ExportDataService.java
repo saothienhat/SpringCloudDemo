@@ -4,10 +4,13 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.List;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -19,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Service;
 
+import com.saothienhat.exportdataservice.model.Employee;
 import com.saothienhat.exportdataservice.model.ExportFileResult;
 
 @Service
@@ -181,5 +185,123 @@ public class ExportDataService {
         }
         return exportFileResult;
     }
+	
+	/**
+	 * Export Excel file.
+	 * Refer: https://www.callicoder.com/java-write-excel-file-apache-poi/
+	 * @param fileName: exported file Excel name (.xlsx)
+	 * @param sheetName: Sheet name
+	 * @param headers: list of header
+	 * @param rowDataList
+	 * @return exportFileResult: result of exporting
+	 * @throws IOException
+	 */
+	public ExportFileResult exportExcel(String fileName, String sheetName, List<String> headers,
+			List<Employee> rowDataList) throws IOException {
+		ExportFileResult exportFileResult = new ExportFileResult();
+		Workbook workbook = new XSSFWorkbook();
+		int colNo = (headers != null && headers.size() > 0) ? headers.size() : 0;
+		
+		if(colNo == 0) {
+			exportFileResult.setStatus("Exception");
+			exportFileResult.setMessage("The number of column in Excel file should more than 0");
+			exportFileResult.setFileName(fileName);
+			exportFileResult.setExportLocation("");
+			return exportFileResult;
+		}
+
+		try {
+			/*
+			 * CreationHelper helps us create instances of various things like DataFormat,
+			 * Hyperlink, RichTextString etc, in a format (HSSF, XSSF) independent way
+			 */
+			// CreationHelper createHelper = workbook.getCreationHelper();
+
+			// Create a Sheet
+			Sheet sheet = workbook.createSheet(sheetName);
+
+			// Create a Font for styling header cells
+			Font headerFont = workbook.createFont();
+			headerFont.setBold(true);
+			headerFont.setFontHeightInPoints((short) 14);
+			headerFont.setColor(IndexedColors.RED.getIndex());
+
+			// Create a CellStyle with the font
+			CellStyle headerCellStyle = workbook.createCellStyle();
+			headerCellStyle.setFont(headerFont);
+
+			// Create a Row
+			Row headerRow = sheet.createRow(0);
+
+			// Create cells
+			for (int index = 0; index < headers.size(); index++) {
+				Cell cell = headerRow.createCell(index);
+				cell.setCellValue(headers.get(index));
+				cell.setCellStyle(headerCellStyle);
+			}
+
+			// Create Other rows and cells with Row data
+			int rowNum = 1;
+			for (Employee employee : rowDataList) {
+				Row row = sheet.createRow(rowNum++);
+
+				row.createCell(0).setCellValue(employee.getName());
+
+				row.createCell(1).setCellValue(employee.getEmail());
+
+				Cell dateOfBirthCell = row.createCell(2);
+				CellStyle dateCellStyle = getDateCellStyle(workbook);
+				dateOfBirthCell.setCellValue(employee.getDateOfBirth());
+				dateOfBirthCell.setCellStyle(dateCellStyle);
+
+				row.createCell(3).setCellValue(employee.getSalary());
+			}
+
+			// Resize all columns to fit the content size
+			for (int i = 0; i < headers.size(); i++) {
+				sheet.autoSizeColumn(i);
+			}
+
+			// ===================
+
+			File currDir = new File(".");
+			String path = currDir.getAbsolutePath();
+			String fileLocation = path.substring(0, path.length() - 1) + fileName + ".xlsx";
+			System.out.println("===>  fileLocation: " + fileLocation);
+
+			FileOutputStream outputStream = new FileOutputStream(fileLocation);
+			workbook.write(outputStream);
+
+			exportFileResult.setStatus("Done");
+			exportFileResult.setMessage("Export Done");
+			exportFileResult.setFileName(fileName);
+			exportFileResult.setExportLocation(path);
+		} catch (IOException e) {
+			LOGGER.error(e.getMessage());
+			exportFileResult.setStatus("IOException");
+		} finally {
+			if (workbook != null) {
+				workbook.close();
+			}
+		}
+		return exportFileResult;
+	}
+
+	/**
+	 * Create Cell Style for formatting Date
+	 * @param workbook
+	 * @return
+	 */
+	private CellStyle getDateCellStyle(Workbook workbook) {
+		/*
+		 * CreationHelper helps us create instances of various things like DataFormat,
+		 * Hyperlink, RichTextString etc, in a format (HSSF, XSSF) independent way
+		 */
+		CreationHelper createHelper = workbook.getCreationHelper();
+		
+		CellStyle dateCellStyle = workbook.createCellStyle();
+		dateCellStyle.setDataFormat(createHelper.createDataFormat().getFormat("dd-MM-yyyy"));
+		return dateCellStyle;
+	}
 
 }

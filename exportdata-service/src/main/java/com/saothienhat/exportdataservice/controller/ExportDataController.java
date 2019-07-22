@@ -5,8 +5,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
+import org.apache.poi.ss.usermodel.CellType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +17,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.saothienhat.exportdataservice.model.Employee;
+import com.saothienhat.exportdataservice.model.ExcelCell;
+import com.saothienhat.exportdataservice.model.ExcelRow;
 import com.saothienhat.exportdataservice.model.ExportFileResult;
 import com.saothienhat.exportdataservice.service.ExportDataService;
 
@@ -26,30 +30,6 @@ public class ExportDataController {
 	
 	@Autowired
 	private ExportDataService exportService;
-
-//	@GetMapping("/excel")
-//	@Produces(MediaType.APPLICATION_OCTET_STREAM)
-//	public Response exportExcel(@QueryParam("file") String file) {
-//		LOGGER.info("Exporting Excel file....");
-//
-//		String path = System.getProperty("user.home") + File.separator + "uploads";
-//        File fileDownload = new File(path + File.separator + file);
-//        ResponseBuilder response = Response.ok((Object) file);
-//        response.header("Content-Disposition", "attachment;filename=" + file);
-//        return response.build();
-//	}
-	
-//	@GetMapping("/excel")
-//	public ResponseEntity<ByteArrayResource> exportExcel() throws IOException {
-//		LOGGER.info("Exporting Excel file....");
-//		String fileName = "Binh-Text";
-//		ByteArrayResource  resource = exportService.export(fileName);
-//		return ResponseEntity.ok()
-////				.headers(headers) // add headers if any
-//				.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + fileName)
-//				.contentLength(resource.contentLength())
-//				.contentType(MediaType.parseMediaType("application/vnd.ms-excel")).body(resource);
-//	}
 	
 	@GetMapping("/excel")
 	public ExportFileResult exportExcel() throws IOException {
@@ -57,14 +37,13 @@ public class ExportDataController {
 		String path = System.getProperty("user.home") + File.separator + "uploads";
 		LOGGER.info("Exporting Excel file....: " + path);
 		
-//		ExportFileResult result = exportService.writeExcel();
-		
 		// Test data
 		List<String> headers = new ArrayList<String>();
 		headers.add("Name");
 		headers.add("Email");
 		headers.add("Date Of Birth");
 		headers.add("Salary");
+		
 		List<Employee> employees =  new ArrayList<Employee>();
 		Calendar dateOfBirth = Calendar.getInstance();
         dateOfBirth.set(1992, 7, 21);
@@ -78,9 +57,26 @@ public class ExportDataController {
         employees.add(new Employee("Steve Maiden", "steve@example.com", 
                 dateOfBirth.getTime(), 1800000.0));
         
-        ExportFileResult result = exportService.exportExcel("TestFile", "Test Sheet", headers, employees);
+        List<ExcelRow> rowDataList = this.getRowDataList(employees);
+        
+        ExportFileResult result = exportService.exportExcel("TestFile", "Test Sheet", headers, rowDataList);
 		
 		return result;
+	}
+	
+	private List<ExcelRow> getRowDataList(List<Employee> employees) {
+		List<ExcelRow> rows = new ArrayList<ExcelRow>();
+        for (int index = 0; index < employees.size(); index++) {
+			Employee employee = employees.get(index);
+			ExcelRow row = new ExcelRow();
+			row.getCells().add(new ExcelCell<String>(0, employee.getName(), CellType.STRING));
+			row.getCells().add(new ExcelCell<String>(1, employee.getEmail(), CellType.STRING));
+			row.getCells().add(new ExcelCell<Date>(2, employee.getDateOfBirth(), CellType.STRING));
+			row.getCells().add(new ExcelCell<Double>(3, employee.getSalary(), CellType.NUMERIC));
+			rows.add(row);
+		}
+        
+		return rows;
 	}
 	
 }
